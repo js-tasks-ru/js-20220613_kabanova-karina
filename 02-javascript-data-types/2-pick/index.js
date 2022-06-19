@@ -5,13 +5,11 @@
  * @returns {object} - returns the new object
  */
 export const pick = (obj, ...fields) => {
-    let object = {};
-    fields.map((item) => {
-        for (const [key, value] of Object.entries(obj)) {
-            if (key === item) {
-                object[key] = value
-            }
-        }
-    });
+    var object = {};
+    let arrayFromObj = Object.entries(obj)
+    for (const [key, value] of arrayFromObj) {
+        if (fields.includes(key))
+            object[key] = value
+    }
     return object
 };
