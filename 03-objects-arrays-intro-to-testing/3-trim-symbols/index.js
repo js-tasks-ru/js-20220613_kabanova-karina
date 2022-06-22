@@ -5,5 +5,26 @@
  * @returns {string} - the new string without extra symbols according passed size
  */
 export function trimSymbols(string, size) {
+    let emptyArr = []
+    let value = string[0] 
+    let count = 0
 
+    if (size === 0) return ""
+    if (!size) return string
+
+    for (let letter of string) {
+
+        if (value === letter && count < size) {
+            count++
+            console.log(value, letter, count)
+            emptyArr.push(letter)
+        }
+
+        if (value != letter) {
+            count = 1
+            value = letter
+            emptyArr.push(letter)
+        }
+    }
+    return emptyArr.join('')
 }
