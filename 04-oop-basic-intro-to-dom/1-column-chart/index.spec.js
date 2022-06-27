@@ -43,7 +43,7 @@ describe('oop-basic-intro-to-dom/column-chart', () => {
 
     expect(columnLink).toBeVisible();
   });
-
+ 
   it('should have property "chartHeight"', () => {
     columnChart = new ColumnChart();
 
