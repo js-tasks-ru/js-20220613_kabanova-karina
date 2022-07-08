@@ -13,27 +13,16 @@ export default class ColumnChart {
         this.chartHeight = 50
         this.url = url
         this.range = range
+        this.from = this.range.from
+        this.to = this.range.to
         this.label = label
         this.link = link
         this.value = ""
-        this.createTemplate()
-        this.getData(this.range)
+        this.render()
+        this.update(this.from, this.to)
     }
 
-    getData({ from = new Date(), to = new Date() } = {}) {
-        const path = new URL(this.url, BACKEND_URL)
-        path.searchParams.set('from', from.toISOString().split('T')[0]);
-        path.searchParams.set('to', to.toISOString().split('T')[0])
-
-        fetchJson(path)
-            .then(response => {
-                this.data = response
-                this.getColumnProps(this.data)
-                this.addColumn()
-            })
-    }
-
-    createTemplate() {
+    render() {
         this.element = this.createElement(`
         <div class="column-chart column-chart_loading" style="--chart-height: ${this.chartHeight}">
           <div class="column-chart__title">Total ${this.label}
@@ -48,6 +37,21 @@ export default class ColumnChart {
             this.element.querySelector(".column-chart__title").insertAdjacentHTML("beforeend", `<a href="${this.link}" class="column-chart__link">View all</a>`)
         }
         this.subElements = this.getSubElements(this.element)
+    }
+
+    async update(from, to) {
+        this.data = await this.loadData(from, to)
+        this.getColumnProps(this.data)
+        this.addColumn()
+        return this.data
+    }
+
+    async loadData( from = new Date(), to = new Date()) {
+        const path = new URL(this.url, BACKEND_URL)
+        path.searchParams.set('from', from.toISOString().split('T')[0]);
+        path.searchParams.set('to', to.toISOString().split('T')[0])
+
+        return fetchJson(path)
     }
 
     addColumn() {
@@ -88,12 +92,6 @@ export default class ColumnChart {
             result[name] = subElement;
         }
         return result;
-    }
-
-    update(start, end) {
-        this.element.classList.add('column-chart_loading')
-        this.range = { from: start, to: end }
-        this.getData(this.range)
     }
 
     remove() {
