@@ -76,7 +76,6 @@ export default class ProductForm {
   }
 
   fillImages(arr) {
-    console.log(arr)
     let sortableList = this.element.querySelector('.sortable-list')
     arr.forEach(item => {
       sortableList.append(this.createElement(`
