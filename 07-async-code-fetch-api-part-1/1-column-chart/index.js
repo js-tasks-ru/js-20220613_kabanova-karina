@@ -3,15 +3,15 @@ import fetchJson from './utils/fetch-json.js';
 const BACKEND_URL = 'https://course-js.javascript.ru';
 
 export default class ColumnChart {
-    constructor({ url = 'api/dashboard/orders',
+    constructor({ 
         range = {},
         label = '',
         link = '',
         formatHeading = data => data
     } = {}) {
+        this.path = new URL('api/dashboard/orders', BACKEND_URL)
         this.formatHeading = formatHeading
         this.chartHeight = 50
-        this.url = url
         this.range = range
         this.from = this.range.from
         this.to = this.range.to
@@ -47,33 +47,33 @@ export default class ColumnChart {
     }
 
     async loadData( from = new Date(), to = new Date()) {
-        const path = new URL(this.url, BACKEND_URL)
-        path.searchParams.set('from', from.toISOString().split('T')[0]);
-        path.searchParams.set('to', to.toISOString().split('T')[0])
 
-        return fetchJson(path)
+        this.path.searchParams.set('from', from.toISOString().split('T')[0]);
+        this.path.searchParams.set('to', to.toISOString().split('T')[0])
+
+        return fetchJson(this.path)
     }
 
     addColumn() {
         this.element.classList.remove('column-chart_loading')
         this.subElements.body.innerHTML = ""
         this.subElements.header.innerHTML = this.totalSum
-        for (let obj of this.columnProps) {
+        for (const obj of this.columnProps) {
             this.subElements.body.append(this.createElement(`<div style="--value: ${obj.value}" data-tooltip="${obj.percent}"></div`))
         }
     }
 
     getColumnProps(data) {
-        let valuesOfData = Object.values(data)
+        const valuesOfData = Object.values(data)
         const maxValue = Math.max(...valuesOfData);
-        const scale = 50 / maxValue;
+        const scale = this.chartHeight / maxValue;
         this.columnProps = valuesOfData.map(item => {
             return {
                 percent: (item / maxValue * 100).toFixed(0) + '%',
                 value: String(Math.floor(item * scale))
             };
         });
-        let sum = valuesOfData.reduce((partialSum, a) => partialSum + a, 0);
+        const sum = valuesOfData.reduce((partialSum, a) => partialSum + a, 0);
         this.totalSum = this.formatHeading(sum)
     }
 

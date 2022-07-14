@@ -4,6 +4,7 @@ const BACKEND_URL = 'https://course-js.javascript.ru';
 
 
 export default class SortableTable {
+  itemsPerPage = 30
   constructor(headersConfig, {
     data = [],
     sorted = {
@@ -14,7 +15,6 @@ export default class SortableTable {
     isSortLocally = false
   } = {}) {
     this.isSortLocally =  isSortLocally
-    this.itemsPerPage = 30
     this.page = 0
     this.headerConfig = headersConfig
     this.url = url
@@ -54,14 +54,23 @@ export default class SortableTable {
   }
 
   async update() {
-    this.data = await this.loadData(this.itemsPerPage * this.page, (this.itemsPerPage * this.page) + 30)
+    const {start, end} = this.getPagination()
+    this.data = await this.loadData(start, end)
     this.subElements.body.innerHTML = ""
     this.fillBodyTemplate()
     this.addArrow()
   }
 
+  getPagination () {
+    const start = this.itemsPerPage * this.page;
+    const end = start + this.itemsPerPage;
+  
+    return { start, end }
+  }
+
   async add() {
-    this.data = await this.loadData(this.itemsPerPage * this.page, (this.itemsPerPage * this.page) + 30)
+    const {start, end} = this.getPagination()
+    this.data = await this.loadData(start, end)
     this.fillBodyTemplate()
     this.addArrow()
   }
@@ -77,10 +86,11 @@ export default class SortableTable {
   }
 
   sort() {
+    const { id, order } = this.sorted
     if (this.isSortLocally) {
-      this.sortOnClient(this.sorted.id, this.sorted.order);
+      this.sortOnClient(id, order);
     }
-    else {this.sortOnServer(this.sorted.id, this.sorted.order)}
+    else {this.sortOnServer(id, order)}
   }
 
   fillBodyTemplate() {
@@ -91,11 +101,11 @@ export default class SortableTable {
   }
 
   initEventListeners() {
-    this.subElements.header.addEventListener('pointerdown', (event) => this.sortOnClick(event))
-    document.addEventListener('scroll', (event) => this.scrollLoader(event));
+    this.subElements.header.addEventListener('pointerdown', this.sortOnClick)
+    document.addEventListener('scroll',  this.scrollLoader);
   }
 
-  sortOnClick(event) {
+  sortOnClick = event => {
     const eventTarget = event.target.closest(`.sortable-table__cell[data-sortable="true"]`)
     if (!eventTarget) return
 
@@ -107,17 +117,15 @@ export default class SortableTable {
   }
 
   sortOnServer(id, order) {
-    let page = this.page
-
-    if (page > 0) {
-      page = 0
+    if (this.page > 0) {
+      this.page = 0
     }
 
     this.update(id, order)
   }
 
-  scrollLoader() {
-    let overallHeight = document.documentElement.scrollHeight
+  scrollLoader = event => {
+    const overallHeight = document.documentElement.scrollHeight
     let scrollByY = window.scrollY
     let heigthOfHtmlInWIndow = document.documentElement.clientHeight
 
