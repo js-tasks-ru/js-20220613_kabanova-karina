@@ -7,9 +7,10 @@ export default class ColumnChart {
         range = {},
         label = '',
         link = '',
+        url = '',
         formatHeading = data => data
     } = {}) {
-        this.path = new URL('api/dashboard/orders', BACKEND_URL)
+        this.path = new URL(url, BACKEND_URL)
         this.formatHeading = formatHeading
         this.chartHeight = 50
         this.range = range
