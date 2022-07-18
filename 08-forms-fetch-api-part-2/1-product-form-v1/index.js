@@ -172,6 +172,7 @@ export default class ProductForm {
     fileInput.accept = 'image/*';
 
     fileInput.addEventListener('change', async () => {
+      console.log(fileInput.files)
       const [file] = fileInput.files;
 
       if (file) {

@@ -12,14 +12,18 @@ export default class SortableTable {
       order: 'asc'
     },
     url = '',
+    from = '',
+    to = '',
     isSortLocally = false
   } = {}) {
-    this.isSortLocally =  isSortLocally
+    this.isSortLocally = isSortLocally
     this.page = 0
     this.headerConfig = headersConfig
     this.url = url
     this.data = data
     this.sorted = sorted
+    this.from = from
+    this.to = to
     this.render()
     this.initEventListeners()
 
@@ -28,13 +32,11 @@ export default class SortableTable {
   render() {
     if (this.element) return
     this.element = this.createElement(`
-    <div data-element="productsContainer" class="products-list__container">
     <div class="sortable-table">
       <div data-element="header" class="sortable-table__header sortable-table__row">
       ${this.fillHeaderTemplate()}
       </div>
       <div data-element="body" class="sortable-table__body">
-      </div>
       </div>
       </div>`)
     this.subElements = this.getSubElements(this.element)
@@ -54,35 +56,55 @@ export default class SortableTable {
   }
 
   async update() {
-    const {start, end} = this.getPagination()
+    const { start, end } = this.getPagination()
     this.data = await this.loadData(start, end)
     this.subElements.body.innerHTML = ""
     this.fillBodyTemplate()
     this.addArrow()
   }
 
-  getPagination () {
+  getPagination() {
     const start = this.itemsPerPage * this.page;
     const end = start + this.itemsPerPage;
-  
+
     return { start, end }
   }
 
   async add() {
-    const {start, end} = this.getPagination()
+    const { start, end } = this.getPagination()
     this.data = await this.loadData(start, end)
     this.fillBodyTemplate()
     this.addArrow()
   }
 
   async loadData(start, end) {
+    if (this.url === 'api/dashboard/bestsellers') {
+      return await this.loadBestsellers()
+    } else {
+      const path = new URL(this.url, BACKEND_URL)
+      path.searchParams.set('_embed', 'subcategory.category')
+      path.searchParams.set('_sort', this.sorted.id)
+      path.searchParams.set('_order', this.sorted.order)
+      path.searchParams.set('_start', start)
+      path.searchParams.set('_end', end)
+      return await fetchJson(path)
+    }
+  }
+
+  async loadBestsellers() {
+    const startInput = this.from.toISOString();
+    const endInput = this.to.toISOString();
+
     const path = new URL(this.url, BACKEND_URL)
-    path.searchParams.set('_embed', 'subcategory.category')
-    path.searchParams.set('_sort', this.sorted.id)
-    path.searchParams.set('_order', this.sorted.order)
-    path.searchParams.set('_start', start)
-    path.searchParams.set('_end', end)
-    return await fetchJson(path)
+    path.searchParams.set('from', startInput)
+    path.searchParams.set('to', endInput)
+    path.searchParams.set('_sort', 'title')
+    path.searchParams.set('_order', 'asc')
+    path.searchParams.set('_start', 0)
+    path.searchParams.set('_end', 30)
+
+    return fetchJson(path)
+
   }
 
   sort() {
@@ -90,7 +112,7 @@ export default class SortableTable {
     if (this.isSortLocally) {
       this.sortOnClient(id, order);
     }
-    else {this.sortOnServer(id, order)}
+    else { this.sortOnServer(id, order) }
   }
 
   fillBodyTemplate() {
@@ -102,7 +124,7 @@ export default class SortableTable {
 
   initEventListeners() {
     this.subElements.header.addEventListener('pointerdown', this.sortOnClick)
-    document.addEventListener('scroll',  this.scrollLoader);
+    if (!this.isSortLocally) document.addEventListener('scroll', this.scrollLoader);
   }
 
   sortOnClick = event => {

@@ -1,19 +1,25 @@
 export default class SortableList {
-    constructor(obj) {
+    constructor(obj = { items: '' }, elem = '') {
         this.items = obj.items
+        this.elem = elem
         this.element
         this.render()
         this.initEventListeners()
-    } 
+    }
 
     render() {
-        this.element = this.createElement(`<ul class = "sortable-list" data-element="imageListContainer"></ul>`)
-        for (const li of this.items) {
-            li.classList.add('sortable-list__item')
-            this.element.append(li)
+        if (this.elem === '') {
+            this.element = this.createElement(`<ul class = "sortable-list" data-element="imageListContainer"></ul>`)
+            for (const li of this.items) {
+                li.classList.add('sortable-list__item')
+                this.element.append(li)
+            }
+            for (const span of this.element.querySelectorAll('span')) {
+                span.classList.add('sortable-list__item-title')
+            }
         }
-        for (const span of this.element.querySelectorAll('span')) {
-            span.classList.add('sortable-list__item-title')
+        else {
+            this.element = this.elem
         }
     }
 
@@ -28,8 +34,9 @@ export default class SortableList {
     addEventPointerDown = event => {
         if (event.target.dataset.deleteHandle != undefined) this.deleteElem(event)
         if (event.target.dataset.grabHandle != "") return
-        
-        this.parentNode = event.target.parentNode
+
+        this.parentNode = event.target.closest('.sortable-list__item')
+
 
         this.placeHolder = this.parentNode.cloneNode(false) // создаем клон 
         this.placeHolder.classList.add('sortable-list__placeholder')
@@ -94,7 +101,7 @@ export default class SortableList {
     }
 
     deleteElem = event => {
-        const parentNode = event.target.parentNode
+        const parentNode = event.target.closest('.sortable-list__item')
         parentNode.remove()
     }
 
