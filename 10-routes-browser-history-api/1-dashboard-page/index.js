@@ -11,7 +11,6 @@ const BACKEND_URL = 'https://course-js.javascript.ru/';
 export default class Page {
     constructor() {
         this.update()
-
     }
 
     async render() {
@@ -21,34 +20,13 @@ export default class Page {
         return this.element
     }
 
-    loadBestsellers() {
-        const { from, to } = this.getRange();
-
-        const startInput = from.toISOString();
-        const endInput = to.toISOString();
-
-        const path = new URL('api/dashboard/bestsellers', BACKEND_URL)
-        path.searchParams.set('from', startInput)
-        path.searchParams.set('to', endInput)
-        path.searchParams.set('_sort', 'title')
-        path.searchParams.set('_order', 'asc')
-        path.searchParams.set('_start', 0)
-        path.searchParams.set('_end', 30)
-
-        return fetchJson(path)
-    }
-
-
     initialize() {
         const { from, to } = this.getRange();
 
-        const table = this.getSortableTable(from, to)
-        this.subElements.sortableTable.append(table)
-
+        const sortableTable = this.getSortableTable(from, to)
         const rangePicker = this.getRangePicker(from, to)
-        this.subElements.rangePicker.append(rangePicker)
 
-        this.ordersChart = new ColumnChart({
+        const ordersChart = new ColumnChart({
             url: 'api/dashboard/orders',
             range: {
                 from,
@@ -56,8 +34,9 @@ export default class Page {
             },
             label: 'orders',
             link: '#'
-        });
-        this.salesChart = new ColumnChart({
+        })
+
+        const salesChart = new ColumnChart({
             url: 'api/dashboard/sales',
             range: {
                 from,
@@ -65,20 +44,28 @@ export default class Page {
             },
             label: 'sales',
             formatHeading: data => `$${data}`
-        });
+        })
 
-        this.customersChart = new ColumnChart({
+        const customersChart = new ColumnChart({
             url: 'api/dashboard/customers',
             range: {
                 from,
                 to
             },
             label: 'customers',
-        });
+        })
 
-        this.subElements.customersChart.append(this.customersChart.element)
-        this.subElements.ordersChart.append(this.ordersChart.element)
-        this.subElements.salesChart.append(this.salesChart.element)
+        this.components = { sortableTable, rangePicker, ordersChart, salesChart, customersChart }
+        this.renderComponents()
+    }
+
+    renderComponents() {
+        Object.keys(this.components).forEach(component => {
+            const root = this.subElements[component]
+            const element = this.components[component].element
+            root.append(element)
+        })
+
     }
 
     getSortableTable(from, to) {
@@ -87,10 +74,8 @@ export default class Page {
             isSortLocally: true,
             from: from,
             to: to
-
         });
-        return sortableTable.element
-
+        return sortableTable
     }
 
     getRangePicker(from, to) {
@@ -104,9 +89,8 @@ export default class Page {
             this.update()
         });
 
-        return rangePicker.element
+        return rangePicker
     }
-
 
     getRange() {
         const now = new Date();
@@ -130,18 +114,11 @@ export default class Page {
 
     update() {
         if (!this.range) return
-        this.ordersChart.update(this.range.from, this.range.to)
-        this.customersChart.update(this.range.from, this.range.to)
-        this.salesChart.update(this.range.from, this.range.to)
-        const sortableTable = new SortableTable(header, {
-            url: 'api/dashboard/bestsellers',
-            isSortLocally: true,
-            from: this.range.from,
-            to: this.range.to
+        const {from, to} = this.range
 
-        });
-        this.subElements.sortableTable.innerHTML = ''
-        this.subElements.sortableTable.append(sortableTable.element)
+        Object.keys(this.components).forEach(component => {
+            component != 'rangePicker' ? this.components[component].update(from, to) : ''
+        })
     }
 
     getTemplate() {
