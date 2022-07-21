@@ -40,7 +40,7 @@ export default class SortableTable {
       </div>
       </div>`)
     this.subElements = this.getSubElements(this.element)
-    this.update()
+    this.update(this.from, this.to)
   }
 
   fillHeaderTemplate() {
@@ -55,13 +55,34 @@ export default class SortableTable {
       .join('')
   }
 
-  async update() {
+  async update(from, to) {
+
     const { start, end } = this.getPagination()
-    this.data = await this.loadData(start, end)
+    this.data = await this.loadData(start, end, from, to)
     this.subElements.body.innerHTML = ""
     this.fillBodyTemplate()
     this.addArrow()
   }
+
+  async loadData(start, end, from, to) {
+    const path = new URL(this.url, BACKEND_URL)
+
+    if (from && to) {
+      const startInput = from.toISOString();
+      const endInput = to.toISOString();
+      path.searchParams.set('from', startInput)
+      path.searchParams.set('to', endInput)
+      start = 0
+      end = 30
+    } else { path.searchParams.set('_embed', 'subcategory.category') }
+
+    path.searchParams.set('_sort', this.sorted.id)
+    path.searchParams.set('_order', this.sorted.order)
+    path.searchParams.set('_start', start)
+    path.searchParams.set('_end', end)
+    return await fetchJson(path)
+  }
+
 
   getPagination() {
     const start = this.itemsPerPage * this.page;
@@ -77,35 +98,6 @@ export default class SortableTable {
     this.addArrow()
   }
 
-  async loadData(start, end) {
-    if (this.url === 'api/dashboard/bestsellers') {
-      return await this.loadBestsellers()
-    } else {
-      const path = new URL(this.url, BACKEND_URL)
-      path.searchParams.set('_embed', 'subcategory.category')
-      path.searchParams.set('_sort', this.sorted.id)
-      path.searchParams.set('_order', this.sorted.order)
-      path.searchParams.set('_start', start)
-      path.searchParams.set('_end', end)
-      return await fetchJson(path)
-    }
-  }
-
-  async loadBestsellers() {
-    const startInput = this.from.toISOString();
-    const endInput = this.to.toISOString();
-
-    const path = new URL(this.url, BACKEND_URL)
-    path.searchParams.set('from', startInput)
-    path.searchParams.set('to', endInput)
-    path.searchParams.set('_sort', 'title')
-    path.searchParams.set('_order', 'asc')
-    path.searchParams.set('_start', 0)
-    path.searchParams.set('_end', 30)
-
-    return fetchJson(path)
-
-  }
 
   sort() {
     const { id, order } = this.sorted
